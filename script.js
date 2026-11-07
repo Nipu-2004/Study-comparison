@@ -129,7 +129,25 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     if (!confirmed) return;
 
     localStorage.clear();
-    window.location.reload();
+    wakeRecords = {};
+    studyRecords = [];
+    dayTotalRecords = [];
+    currentGraph = "daily";
+    currentRange = "week";
+    currentMonth = today().slice(0, 7);
+    motivationIndex = 0;
+
+    applyTheme("pink");
+    updateUserNameDisplay("Student");
+    showNameModal();
+    updateDashboard();
+
+    if (menuPanel) {
+        menuPanel.classList.add("hidden");
+    }
+    if (menuToggle) {
+        menuToggle.setAttribute("aria-expanded", "false");
+    }
 });
 
 showNameModal();
@@ -336,7 +354,8 @@ const motivationImageFiles = [
     "อินฟูล.jpg"
 ];
 
-const motivationImages = motivationImageFiles.map((file) => `./${encodeURI(file)}`);
+const motivationImageFolder = "./New folder";
+const motivationImages = motivationImageFiles.map((file) => `${motivationImageFolder}/${encodeURI(file)}`);
 
 const motivationLibrary = Array.from({ length: 48 }, (_, index) => ({
     quote: motivationQuotes[index],
