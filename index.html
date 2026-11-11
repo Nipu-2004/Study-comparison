@@ -25,7 +25,9 @@
         </button>
     </div>
 
-    <h1>Welcome, <span id="headerUserName">Student</span></h1>
+    <h1 class="header-title">
+        <span id="headerUserName">Student</span>
+    </h1>
     <p>Track your daily routine and improve your productivity.</p>
 </header>
 
@@ -189,10 +191,17 @@
 
 </div>
 
+<footer class="site-footer">
+    <div class="site-footer__content">
+        <span>Developed &amp; Updated by Heshan Silva</span>
+        <span id="appVersion">Version 1.0.0</span>
+    </div>
+</footer>
+
 <div id="nameModal" class="name-modal hidden" aria-live="polite">
     <div class="name-modal-card">
         <div class="name-modal-icon">✨</div>
-        <h3>Welcome, beautiful soul!</h3>
+        <h3>Welcome, friend!</h3>
         <p>Before we begin, what should we call you?</p>
         <form id="nameForm">
             <input type="text" id="userNameInput" placeholder="Enter your name" maxlength="30" autocomplete="off" required>

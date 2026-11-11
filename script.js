@@ -7,6 +7,12 @@ function today() {
         .toISOString().split("T")[0];
 }
 
+const appVersion = "1.0.0";
+const appVersionElement = document.getElementById("appVersion");
+if (appVersionElement) {
+    appVersionElement.textContent = `Version ${appVersion}`;
+}
+
 const todayDate = today();
 document.getElementById("wakeDate").value = todayDate;
 document.getElementById("studyDate").value = todayDate;
@@ -139,6 +145,7 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
 
     applyTheme("pink");
     updateUserNameDisplay("Student");
+    updateStudyMilestone(0);
     showNameModal();
     updateDashboard();
 
@@ -362,6 +369,37 @@ const motivationLibrary = Array.from({ length: 48 }, (_, index) => ({
     image: motivationImages[index % motivationImages.length]
 }));
 
+const studyMilestoneImages = [
+    { hours: 20, image: "./New folder/07.jpg", label: "Level 7: 20 hours complete" },
+    { hours: 15, image: "./New folder/06.jpg", label: "Level 6: 15 hours complete" },
+    { hours: 10, image: "./New folder/05.jpg", label: "Level 5: 10 hours complete" },
+    { hours: 5, image: "./New folder/04.jpg", label: "Level 4: 5 hours complete" },
+    { hours: 3, image: "./New folder/03.jpg", label: "Level 3: 3 hours complete" },
+    { hours: 2, image: "./New folder/02.jpg", label: "Level 2: 2 hours complete" },
+    { hours: 1, image: "./New folder/01.jpg", label: "Level 1: 1 hour complete" }
+];
+
+function getStudyMilestone(hours) {
+    const sessionHours = Number(hours) || 0;
+    return [...studyMilestoneImages].sort((a, b) => a.hours - b.hours)
+        .reverse()
+        .find(item => sessionHours >= item.hours) || null;
+}
+
+function updateStudyMilestone(hours) {
+    const totalHours = Array.isArray(studyRecords)
+        ? studyRecords.reduce((sum, record) => sum + Number(record.duration || 0), 0)
+        : 0;
+
+    const milestone = getStudyMilestone(typeof hours === "number" ? hours : totalHours);
+
+    if (!milestone) {
+        return;
+    }
+}
+
+updateStudyMilestone(studyRecords.at(-1)?.duration || 0);
+
 function getMonthOptions() {
     const months = new Set();
 
@@ -526,6 +564,8 @@ document.getElementById("studyForm")
     studyRecords.push(session);
 
     saveData();
+
+    updateStudyMilestone(duration);
 
     document.getElementById("studyMessage")
         .textContent = "Study session added successfully!";
@@ -742,8 +782,9 @@ function updateDashboard() {
     chart.innerHTML = "";
 
     const width = 780;
-    const height = 230;
-    const padding = { top: 30, right: 18, bottom: 28, left: 20 };
+    const height = window.innerWidth < 480 ? 260 : 230;
+    const isMobile = window.innerWidth < 480;
+    const padding = { top: 30, right: 18, bottom: isMobile ? 42 : 28, left: isMobile ? 46 : 20 };
     const graphHeight = height - padding.top - padding.bottom;
 
     const getDayTotalForDate = date => {
@@ -847,8 +888,39 @@ function updateDashboard() {
     leftAxis.setAttribute("stroke-width", "2");
     svg.appendChild(leftAxis);
 
+    const niceStep = (() => {
+        const raw = scaledMaxValue / 4;
+        const magnitude = 10 ** Math.floor(Math.log10(raw || 1));
+        const normalized = raw / magnitude;
+        let rounded = 1;
+        if (normalized > 1) rounded = 2;
+        if (normalized > 2) rounded = 5;
+        if (normalized > 5) rounded = 10;
+        return rounded * magnitude;
+    })();
+
+    const yMaxTick = Math.ceil(scaledMaxValue / niceStep) * niceStep;
+    const yTicks = [];
+    for (let value = 0; value <= yMaxTick + 0.0001; value += niceStep) {
+        yTicks.push(value);
+    }
+
+    yTicks.forEach((value) => {
+        const y = height - padding.bottom - ((value / yMaxTick) * graphHeight);
+
+        const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        tick.setAttribute("x1", padding.left - 6);
+        tick.setAttribute("y1", y);
+        tick.setAttribute("x2", padding.left);
+        tick.setAttribute("y2", y);
+        tick.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
+        tick.setAttribute("stroke-width", "1.2");
+        svg.appendChild(tick);
+    });
+
     if (currentGraph === "daily") {
-        for (let hour = 0; hour <= 24; hour += 6) {
+        const hourSteps = isMobile ? [0, 6, 12, 18, 24] : [0, 6, 12, 18, 24];
+        hourSteps.forEach((hour) => {
             const x = padding.left + (hour / 24) * (width - padding.left - padding.right);
             const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
             tick.setAttribute("x1", x);
@@ -863,11 +935,12 @@ function updateDashboard() {
             label.setAttribute("x", x);
             label.setAttribute("y", height - 8);
             label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", "10");
+            label.setAttribute("font-size", isMobile ? "18" : "12");
+            label.setAttribute("font-weight", "800");
             label.setAttribute("fill", "#4a1d3a");
             label.textContent = `${hour}h`;
             svg.appendChild(label);
-        }
+        });
     }
 
     if (currentGraph === "progress") {
@@ -881,16 +954,17 @@ function updateDashboard() {
             tick.setAttribute("x1", x);
             tick.setAttribute("y1", height - padding.bottom);
             tick.setAttribute("x2", x);
-            tick.setAttribute("y2", height - padding.bottom + 6);
+            tick.setAttribute("y2", height - padding.bottom + 8);
             tick.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
             tick.setAttribute("stroke-width", "1.2");
             svg.appendChild(tick);
 
             const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
             label.setAttribute("x", x);
-            label.setAttribute("y", height - 8);
+            label.setAttribute("y", height - 10);
             label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", "10");
+            label.setAttribute("font-size", isMobile ? "18" : "12");
+            label.setAttribute("font-weight", "800");
             label.setAttribute("fill", "#4a1d3a");
             const displayDate = new Date(date + "T00:00:00");
             const day = displayDate.getDate();
@@ -947,9 +1021,9 @@ function updateDashboard() {
             label.setAttribute("x", point.x);
             label.setAttribute("y", point.y - 12);
             label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", "10");
+            label.setAttribute("font-size", isMobile ? "16" : "12");
             label.setAttribute("fill", "#2f3d5a");
-            label.setAttribute("font-weight", "bold");
+            label.setAttribute("font-weight", "900");
             label.textContent = `${value.toFixed(1)}h`;
             svg.appendChild(label);
         });

@@ -197,6 +197,36 @@ header h1 {
     font-size: 27px;
 }
 
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.header-name-wrap,
+.welcome-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.mini-milestone {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+}
+
+.mini-milestone.hidden {
+    display: none;
+}
+
 header p {
     margin-top: 8px;
     color: var(--header-text);
@@ -341,6 +371,9 @@ button:hover {
 
 .chart-card {
     margin-top: 25px;
+    margin-left: auto;
+    max-width: 900px;
+    width: 100%;
     background: linear-gradient(180deg, var(--card-bg-1) 0%, var(--card-bg-2) 100%);
     border: 1px solid var(--card-border);
     box-shadow: 0 10px 24px var(--shadow);
@@ -629,6 +662,29 @@ button:hover {
     font-size: 14px;
 }
 
+.site-footer {
+    text-align: center;
+    padding: 22px 20px 30px;
+    color: var(--text-subtle);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    border-top: 1px solid rgba(122, 33, 79, 0.12);
+    margin-top: 20px;
+}
+
+.site-footer__content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+}
+
+.site-footer__content span {
+    display: inline-block;
+}
+
 @media(max-width: 750px) {
 
     .stats {
@@ -641,6 +697,10 @@ button:hover {
 
     .comparison-row {
         grid-template-columns: 1fr;
+    }
+
+    .chart {
+        height: 260px;
     }
 
     header {
