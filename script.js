@@ -7,7 +7,28 @@ function today() {
         .toISOString().split("T")[0];
 }
 
-const appVersion = "1.0.0";
+function yesterday() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const offset = d.getTimezoneOffset();
+    return new Date(d.getTime() - offset * 60000)
+        .toISOString().split("T")[0];
+}
+
+const entryDateInputs = ["wakeDate", "studyDate", "dayTotalDate"]
+    .map(id => document.getElementById(id));
+
+function updateEntryDateLimits() {
+    const minimumDate = yesterday();
+    const maximumDate = today();
+
+    entryDateInputs.forEach(input => {
+        input.min = minimumDate;
+        input.max = maximumDate;
+    });
+}
+
+const appVersion = "1.0.2";
 const appVersionElement = document.getElementById("appVersion");
 if (appVersionElement) {
     appVersionElement.textContent = `Version ${appVersion}`;
@@ -17,13 +38,15 @@ const todayDate = today();
 document.getElementById("wakeDate").value = todayDate;
 document.getElementById("studyDate").value = todayDate;
 document.getElementById("dayTotalDate").value = todayDate;
-document.getElementById("wakeDate").max = todayDate;
-document.getElementById("studyDate").max = todayDate;
-document.getElementById("dayTotalDate").max = todayDate;
+updateEntryDateLimits();
+entryDateInputs.forEach(input => {
+    input.addEventListener("focus", updateEntryDateLimits);
+});
 
-function isTodayOrPast(dateString) {
+function isTodayOrYesterday(dateString) {
     if (!dateString) return false;
-    return dateString <= today();
+    updateEntryDateLimits();
+    return dateString >= yesterday() && dateString <= today();
 }
 
 function getUserName() {
@@ -495,8 +518,8 @@ document.getElementById("wakeForm")
     const date = document.getElementById("wakeDate").value;
     const time = document.getElementById("wakeTime").value;
 
-    if (!isTodayOrPast(date)) {
-        document.getElementById("wakeMessage").textContent = "You can only save wake-up times for today or past dates.";
+    if (!isTodayOrYesterday(date)) {
+        document.getElementById("wakeMessage").textContent = "You can only save wake-up times for today or yesterday.";
         return;
     }
 
@@ -525,8 +548,8 @@ document.getElementById("studyForm")
     const start = document.getElementById("startTime").value;
     const end = document.getElementById("endTime").value;
 
-    if (!isTodayOrPast(date)) {
-        document.getElementById("studyMessage").textContent = "You can only add study sessions for today or past dates.";
+    if (!isTodayOrYesterday(date)) {
+        document.getElementById("studyMessage").textContent = "You can only add study sessions for today or yesterday.";
         return;
     }
 
@@ -591,8 +614,8 @@ document.getElementById("dayTotalForm")
     const date = document.getElementById("dayTotalDate").value;
     const totalHours = Number(document.getElementById("dayTotalHours").value);
 
-    if (!isTodayOrPast(date)) {
-        document.getElementById("comparisonMessage").textContent = "You can only add end-of-day totals for today or past dates.";
+    if (!isTodayOrYesterday(date)) {
+        document.getElementById("comparisonMessage").textContent = "You can only add end-of-day totals for today or yesterday.";
         return;
     }
 
@@ -935,7 +958,7 @@ function updateDashboard() {
             label.setAttribute("x", x);
             label.setAttribute("y", height - 8);
             label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", isMobile ? "18" : "12");
+            label.setAttribute("font-size", isMobile ? "22" : "15");
             label.setAttribute("font-weight", "800");
             label.setAttribute("fill", "#4a1d3a");
             label.textContent = `${hour}h`;
@@ -963,7 +986,7 @@ function updateDashboard() {
             label.setAttribute("x", x);
             label.setAttribute("y", height - 10);
             label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", isMobile ? "18" : "12");
+            label.setAttribute("font-size", isMobile ? "22" : "15");
             label.setAttribute("font-weight", "800");
             label.setAttribute("fill", "#4a1d3a");
             const displayDate = new Date(date + "T00:00:00");
