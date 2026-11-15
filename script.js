@@ -15,7 +15,7 @@ function yesterday() {
         .toISOString().split("T")[0];
 }
 
-const entryDateInputs = ["wakeDate", "studyDate", "dayTotalDate"]
+const entryDateInputs = ["studyDate", "dayTotalDate"]
     .map(id => document.getElementById(id));
 
 function updateEntryDateLimits() {
@@ -28,14 +28,13 @@ function updateEntryDateLimits() {
     });
 }
 
-const appVersion = "1.0.2";
+const appVersion = "1.0.3";
 const appVersionElement = document.getElementById("appVersion");
 if (appVersionElement) {
     appVersionElement.textContent = `Version ${appVersion}`;
 }
 
 const todayDate = today();
-document.getElementById("wakeDate").value = todayDate;
 document.getElementById("studyDate").value = todayDate;
 document.getElementById("dayTotalDate").value = todayDate;
 updateEntryDateLimits();
@@ -158,7 +157,6 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     if (!confirmed) return;
 
     localStorage.clear();
-    wakeRecords = {};
     studyRecords = [];
     dayTotalRecords = [];
     currentGraph = "daily";
@@ -183,10 +181,6 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
 showNameModal();
 
 // LOAD SAVED DATA
-
-let wakeRecords = JSON.parse(
-    localStorage.getItem("wakeRecords") || "{}"
-);
 
 let studyRecords = JSON.parse(
     localStorage.getItem("studyRecords") || "[]"
@@ -489,12 +483,6 @@ function hideMotivationPopup() {
 // SAVE DATA
 
 function saveData() {
-
-    localStorage.setItem(
-        "wakeRecords",
-        JSON.stringify(wakeRecords)
-    );
-
     localStorage.setItem(
         "studyRecords",
         JSON.stringify(studyRecords)
@@ -504,36 +492,7 @@ function saveData() {
         "dayTotalRecords",
         JSON.stringify(dayTotalRecords)
     );
-
 }
-
-
-// MORNING WAKE-UP TRACKER
-
-document.getElementById("wakeForm")
-.addEventListener("submit", function(e) {
-
-    e.preventDefault();
-
-    const date = document.getElementById("wakeDate").value;
-    const time = document.getElementById("wakeTime").value;
-
-    if (!isTodayOrYesterday(date)) {
-        document.getElementById("wakeMessage").textContent = "You can only save wake-up times for today or yesterday.";
-        return;
-    }
-
-    wakeRecords[date] = time;
-
-    saveData();
-
-    document.getElementById("wakeMessage")
-        .textContent = "Wake-up time saved successfully!";
-
-    showMotivationPopup();
-    updateDashboard();
-
-});
 
 
 // ADD STUDY SESSION
@@ -794,10 +753,6 @@ function updateDashboard() {
 
     document.getElementById("averageHours")
         .textContent = average.toFixed(1) + " hrs";
-
-    document.getElementById("wakeDisplay")
-        .textContent = wakeRecords[today()] || "Not Added";
-
 
     // DRAW GRAPH
 
@@ -1120,22 +1075,6 @@ function updateDashboard() {
             id: record.id,
             delete: () => {
                 dayTotalRecords = dayTotalRecords.filter(item => item.id !== record.id);
-                saveData();
-                updateDashboard();
-            }
-        });
-    });
-
-    Object.entries(wakeRecords).forEach(([date, time]) => {
-        allHistoryEntries.push({
-            type: "wake",
-            date,
-            time,
-            title: "Wake-up time",
-            subtitle: `${date} | ${time}`,
-            id: date,
-            delete: () => {
-                delete wakeRecords[date];
                 saveData();
                 updateDashboard();
             }
