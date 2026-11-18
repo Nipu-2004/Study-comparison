@@ -168,6 +168,35 @@ document.getElementById("themeSelect")?.addEventListener("change", function (eve
     updateDashboard();
 });
 
+document.getElementById("examDetailsForm")?.addEventListener("submit", function (event) {
+    event.preventDefault();
+
+    const level = document.getElementById("dashboardStudentLevel").value;
+    const examMonth = document.getElementById("dashboardExamMonth").value;
+    const message = document.getElementById("examDetailsMessage");
+
+    try {
+        window.ExamCountdown.save(currentProfile?.username, level, examMonth);
+        message.textContent = "Exam details saved.";
+        updateExamCountdown(true, false);
+    } catch (error) {
+        console.error("Could not save exam details:", error);
+        message.textContent = "Could not save your exam details. Please try again.";
+    }
+});
+
+document.getElementById("editExamDetailsBtn")?.addEventListener("click", function () {
+    const details = window.ExamCountdown.get(currentProfile?.username);
+    if (details) {
+        document.getElementById("dashboardStudentLevel").value = details.level;
+        document.getElementById("dashboardExamMonth").value = details.examMonth;
+    }
+
+    document.getElementById("examCountdownText").classList.add("hidden");
+    document.getElementById("examDetailsForm").classList.remove("hidden");
+    this.classList.add("hidden");
+});
+
 document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     const confirmed = window.confirm("This will clear all saved study data and restart the app. Continue?");
     if (!confirmed) return;
@@ -185,6 +214,10 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     updateUserNameDisplay("Student");
     updateStudyMilestone(0);
     showNameModal();
+    updateExamCountdown(
+        Boolean(currentUser),
+        currentProfile?.username?.trim().toLowerCase() === ADMIN_USERNAME
+    );
     updateDashboard();
 
     if (menuPanel) {
@@ -1219,6 +1252,37 @@ document.getElementById("backToAuthChoice")
 document.getElementById("backFromRegistration")
     .addEventListener("click", returnToPreviousAuthChoice);
 
+function updateExamCountdown(loggedIn, isAdmin) {
+    const card = document.getElementById("examCountdownCard");
+    const text = document.getElementById("examCountdownText");
+    const form = document.getElementById("examDetailsForm");
+    const editButton = document.getElementById("editExamDetailsBtn");
+    const message = document.getElementById("examDetailsMessage");
+
+    if (!loggedIn || isAdmin) {
+        card.classList.add("hidden");
+        text.classList.add("hidden");
+        form.classList.add("hidden");
+        editButton.classList.add("hidden");
+        window.ExamCountdown.clear(text);
+        return;
+    }
+
+    card.classList.remove("hidden");
+    const details = window.ExamCountdown.get(currentProfile?.username);
+    if (details) {
+        text.classList.remove("hidden");
+        form.classList.add("hidden");
+        editButton.classList.remove("hidden");
+        window.ExamCountdown.render(text, details.level, details.examMonth);
+    } else {
+        window.ExamCountdown.clear(text);
+        text.classList.add("hidden");
+        form.classList.remove("hidden");
+        editButton.classList.add("hidden");
+        message.textContent = "Add your A/L or O/L exam details to start the countdown.";
+    }
+}
 
 function showAuthScreen(loggedIn) {
 
@@ -1237,23 +1301,7 @@ function showAuthScreen(loggedIn) {
     const profileUsername = currentProfile?.username?.trim().toLowerCase();
     const isAdmin =
         loggedIn && profileUsername === ADMIN_USERNAME;
-    const examCountdownCard = document.getElementById("examCountdownCard");
-    const examCountdownText = document.getElementById("examCountdownText");
-    const examDetails = !isAdmin && loggedIn
-        ? window.ExamCountdown.get(currentProfile?.username)
-        : null;
-
-    if (examDetails) {
-        examCountdownCard.classList.remove("hidden");
-        window.ExamCountdown.render(
-            examCountdownText,
-            examDetails.level,
-            examDetails.examMonth
-        );
-    } else {
-        examCountdownCard.classList.add("hidden");
-        window.ExamCountdown.clear(examCountdownText);
-    }
+    updateExamCountdown(loggedIn, isAdmin);
 
 if (isAdmin) {
     console.log("ADMIN DASHBOARD: Loading students...");

@@ -158,6 +158,22 @@
     <div id="examCountdownCard" class="exam-countdown-card hidden">
         <h2>Your exam countdown</h2>
         <p id="examCountdownText" aria-live="polite"></p>
+        <form id="examDetailsForm" class="hidden">
+            <label for="dashboardStudentLevel">Student level</label>
+            <select id="dashboardStudentLevel" required>
+                <option value="" disabled selected>Select A/L or O/L</option>
+                <option value="A/L">A/L student</option>
+                <option value="O/L">O/L student</option>
+            </select>
+
+            <label for="dashboardExamMonth">Exam month and year</label>
+            <input type="month" id="dashboardExamMonth" required>
+            <small class="exam-countdown-note">The countdown targets the last day of the selected month.</small>
+
+            <button type="submit" class="full">Save exam details</button>
+        </form>
+        <p id="examDetailsMessage" class="message" aria-live="polite"></p>
+        <button type="button" id="editExamDetailsBtn" class="toggle-btn hidden">Update exam details</button>
     </div>
 
     <!-- STATISTICS -->
