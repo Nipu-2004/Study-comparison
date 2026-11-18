@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="style.css">
 </head>
 
-<body>
+<body data-theme="blue">
 
     <div id="authSection" class="container auth-shell">
     <div id="authQuoteLayer" class="auth-quote-layer" aria-hidden="true"></div>
@@ -219,7 +219,7 @@
             <button type="button" class="nav-btn" id="nextMonthBtn" aria-label="Next month">→</button>
         </div>
 
-        <p id="chartDescription">Shows the actual study time added for the last 7 days.</p>
+        <p id="chartDescription">Compare daily study time with end-of-day totals for the last 7 days.</p>
 
         <form id="dayTotalForm" class="comparison-form">
             <div class="comparison-row">
@@ -240,11 +240,6 @@
         <p class="message" id="comparisonMessage"></p>
 
         <div class="chart" id="chart"></div>
-
-        <div class="graph-toggle">
-            <button type="button" class="toggle-btn active" data-graph="daily">Daily Study Time</button>
-            <button type="button" class="toggle-btn" data-graph="progress">Day Total Progress</button>
-        </div>
 
         <div class="graph-toggle range-toggle">
             <button type="button" class="toggle-btn active" data-range="week">Week View</button>

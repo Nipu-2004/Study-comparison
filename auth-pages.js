@@ -3,6 +3,10 @@ const authPagesClient = window.supabase.createClient(
     window.SUPABASE_ANON_KEY
 );
 
+const savedTheme = localStorage.getItem("studyTrackerTheme");
+document.body.dataset.theme =
+    ["pink", "blue", "green", "purple"].includes(savedTheme) ? savedTheme : "blue";
+
 const authBackgroundQuotes = [
     "Small steps still move you forward.",
     "Your focus is your superpower.",

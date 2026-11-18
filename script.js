@@ -83,7 +83,7 @@ function updateUserNameDisplay(userName = getUserName()) {
 
 function applyTheme(themeName) {
     const validThemes = ["pink", "blue", "green", "purple"];
-    const selectedTheme = validThemes.includes(themeName) ? themeName : "pink";
+    const selectedTheme = validThemes.includes(themeName) ? themeName : "blue";
 
     document.body.dataset.theme = selectedTheme;
 
@@ -157,7 +157,7 @@ document.addEventListener("click", function (event) {
 });
 
 updateUserNameDisplay();
-applyTheme(localStorage.getItem("studyTrackerTheme") || "pink");
+applyTheme(localStorage.getItem("studyTrackerTheme") || "blue");
 
 document.getElementById("themeSelect")?.addEventListener("change", function (event) {
     applyTheme(event.target.value);
@@ -171,12 +171,11 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     localStorage.clear();
     studyRecords = [];
     dayTotalRecords = [];
-    currentGraph = "daily";
     currentRange = "week";
     currentMonth = today().slice(0, 7);
     motivationIndex = 0;
 
-    applyTheme("pink");
+    applyTheme("blue");
     updateUserNameDisplay("Student");
     updateStudyMilestone(0);
     showNameModal();
@@ -196,7 +195,6 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
 let studyRecords = [];
 let dayTotalRecords = [];
 
-let currentGraph = "daily";
 let currentRange = "week";
 let currentMonth = today().slice(0, 7);
 let motivationIndex = Number(localStorage.getItem("motivationIndex") || 0);
@@ -693,28 +691,6 @@ try {
 });
 
 
-document.querySelectorAll(".toggle-btn[data-graph]").forEach(button => {
-    button.addEventListener("click", function() {
-        currentGraph = this.dataset.graph;
-
-        document.querySelectorAll(".toggle-btn[data-graph]").forEach(btn => {
-            btn.classList.toggle("active", btn === this);
-        });
-
-        const chartDescription = document.getElementById("chartDescription");
-
-        if (currentRange === "week") {
-            chartDescription.textContent = "Shows the actual study time added for the last 7 days.";
-        } else if (currentGraph === "daily") {
-            chartDescription.textContent = "Shows the actual study time added for each day in the selected month.";
-        } else {
-            chartDescription.textContent = "Compare your daily study time with your end-of-day total study hours for the selected month.";
-        }
-
-        updateDashboard();
-    });
-});
-
 document.querySelectorAll(".toggle-btn[data-range]").forEach(button => {
     button.addEventListener("click", function() {
         currentRange = this.dataset.range;
@@ -725,13 +701,9 @@ document.querySelectorAll(".toggle-btn[data-range]").forEach(button => {
 
         const chartDescription = document.getElementById("chartDescription");
 
-        if (currentRange === "week") {
-            chartDescription.textContent = "Shows the actual study time added for the last 7 days.";
-        } else if (currentGraph === "daily") {
-            chartDescription.textContent = "Shows the actual study time added for each day in the selected month.";
-        } else {
-            chartDescription.textContent = "Compare your daily study time with your end-of-day total study hours for the selected month.";
-        }
+        chartDescription.textContent = currentRange === "week"
+            ? "Compare daily study time with end-of-day totals for the last 7 days."
+            : "Compare daily study time with end-of-day totals for the selected month.";
 
         updateDashboard();
     });
@@ -846,8 +818,6 @@ function updateDashboard() {
         return record ? record.totalHours : 0;
     };
 
-    const selectedDate = document.getElementById("studyDate")?.value || today();
-    const dailyHours = Array.from({ length: 24 }, () => 0);
     const graphTheme = getComputedStyle(document.body);
     const graphPrimary = graphTheme.getPropertyValue("--graph-primary").trim();
     const graphPrimaryGlow = graphTheme.getPropertyValue("--graph-primary-glow").trim();
@@ -856,41 +826,7 @@ function updateDashboard() {
     const graphAxis = graphTheme.getPropertyValue("--graph-axis").trim();
     const graphText = graphTheme.getPropertyValue("--text-main").trim();
 
-    studyRecords
-        .filter(record => record.date === selectedDate)
-        .forEach(record => {
-            const startHour = Number(record.start.split(":")[0]);
-            const startMinute = Number(record.start.split(":")[1]);
-            const endHour = Number(record.end.split(":")[0]);
-            const endMinute = Number(record.end.split(":")[1]);
-
-            const startTotalMinutes = startHour * 60 + startMinute;
-            const endTotalMinutes = endHour * 60 + endMinute;
-            const sessionLength = Math.max(0, endTotalMinutes - startTotalMinutes) / 60;
-
-            if (sessionLength <= 0) return;
-
-            for (let hour = 0; hour < 24; hour++) {
-                const hourStart = hour * 60;
-                const hourEnd = hourStart + 60;
-                const overlapStart = Math.max(startTotalMinutes, hourStart);
-                const overlapEnd = Math.min(endTotalMinutes, hourEnd);
-                const overlap = Math.max(0, overlapEnd - overlapStart) / 60;
-
-                if (overlap > 0) {
-                    dailyHours[hour] += overlap;
-                }
-            }
-        });
-
-    const dailySeries = [{
-        values: dailyHours,
-        color: graphPrimary,
-        glow: graphPrimaryGlow,
-        label: "Daily Study Time"
-    }];
-
-    const progressSeries = [{
+    const series = [{
         values: hours,
         color: graphPrimary,
         glow: graphPrimaryGlow,
@@ -902,7 +838,6 @@ function updateDashboard() {
         label: "End-of-Day Total"
     }];
 
-    const series = currentGraph === "progress" ? progressSeries : dailySeries;
     const maxValue = Math.max(1, ...series.flatMap(entry => entry.values));
     const scalePadding = maxValue * 0.2;
     const scaledMaxValue = maxValue + scalePadding;
@@ -979,61 +914,34 @@ function updateDashboard() {
         svg.appendChild(tick);
     });
 
-    if (currentGraph === "daily") {
-        const hourSteps = isMobile ? [0, 6, 12, 18, 24] : [0, 6, 12, 18, 24];
-        hourSteps.forEach(hour => {
-            const x = padding.left + (hour / 24) * (width - padding.left - padding.right);
-            const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            tick.setAttribute("x1", x);
-            tick.setAttribute("y1", height - padding.bottom);
-            tick.setAttribute("x2", x);
-            tick.setAttribute("y2", height - padding.bottom + 6);
-            tick.setAttribute("stroke", graphAxis);
-            tick.setAttribute("stroke-width", "1.2");
-            svg.appendChild(tick);
+    const step = dates.length > 12 ? Math.ceil(dates.length / 8) : 1;
 
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.setAttribute("x", x);
-            label.setAttribute("y", height - 8);
-            label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", isMobile ? "22" : "15");
-            label.setAttribute("font-weight", "800");
-            label.setAttribute("fill", graphText);
-            label.textContent = `${hour}h`;
-            svg.appendChild(label);
-        });
-    }
+    dates.forEach((date, index) => {
+        if (index % step !== 0 && index !== dates.length - 1) return;
 
-    if (currentGraph === "progress") {
-        const step = dates.length > 12 ? Math.ceil(dates.length / 8) : 1;
+        const x = padding.left + (index * (width - padding.left - padding.right)) / Math.max(dates.length - 1, 1);
+        const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        tick.setAttribute("x1", x);
+        tick.setAttribute("y1", height - padding.bottom);
+        tick.setAttribute("x2", x);
+        tick.setAttribute("y2", height - padding.bottom + 8);
+        tick.setAttribute("stroke", graphAxis);
+        tick.setAttribute("stroke-width", "1.2");
+        svg.appendChild(tick);
 
-        dates.forEach((date, index) => {
-            if (index % step !== 0 && index !== dates.length - 1) return;
-
-            const x = padding.left + (index * (width - padding.left - padding.right)) / Math.max(dates.length - 1, 1);
-            const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
-            tick.setAttribute("x1", x);
-            tick.setAttribute("y1", height - padding.bottom);
-            tick.setAttribute("x2", x);
-            tick.setAttribute("y2", height - padding.bottom + 8);
-            tick.setAttribute("stroke", graphAxis);
-            tick.setAttribute("stroke-width", "1.2");
-            svg.appendChild(tick);
-
-            const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            label.setAttribute("x", x);
-            label.setAttribute("y", height - 10);
-            label.setAttribute("text-anchor", "middle");
-            label.setAttribute("font-size", isMobile ? "22" : "15");
-            label.setAttribute("font-weight", "800");
-            label.setAttribute("fill", graphText);
-            const displayDate = new Date(date + "T00:00:00");
-            const day = displayDate.getDate();
-            const month = displayDate.toLocaleDateString("en-US", { month: "short" });
-            label.textContent = currentRange === "week" ? displayDate.toLocaleDateString("en-US", { weekday: "short" }) : `${month} ${day}`;
-            svg.appendChild(label);
-        });
-    }
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("x", x);
+        label.setAttribute("y", height - 10);
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", isMobile ? "22" : "15");
+        label.setAttribute("font-weight", "800");
+        label.setAttribute("fill", graphText);
+        const displayDate = new Date(date + "T00:00:00");
+        const day = displayDate.getDate();
+        const month = displayDate.toLocaleDateString("en-US", { month: "short" });
+        label.textContent = currentRange === "week" ? displayDate.toLocaleDateString("en-US", { weekday: "short" }) : `${month} ${day}`;
+        svg.appendChild(label);
+    });
 
     series.forEach(set => {
         const points = set.values.map((value, index) => {
@@ -1090,32 +998,30 @@ function updateDashboard() {
         });
     });
 
-    if (currentGraph === "progress") {
-        const legendY = 14;
-        const legendItems = [
-            { color: graphPrimary, label: "Daily Study" },
-            { color: graphSecondary, label: "End-of-Day Total" }
-        ];
+    const legendY = 14;
+    const legendItems = [
+        { color: graphPrimary, label: "Daily Study" },
+        { color: graphSecondary, label: "End-of-Day Total" }
+    ];
 
-        legendItems.forEach((item, index) => {
-            const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            rect.setAttribute("x", 24 + index * 150);
-            rect.setAttribute("y", legendY);
-            rect.setAttribute("width", "12");
-            rect.setAttribute("height", "12");
-            rect.setAttribute("fill", item.color);
-            rect.setAttribute("rx", "3");
-            svg.appendChild(rect);
+    legendItems.forEach((item, index) => {
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("x", 24 + index * 150);
+        rect.setAttribute("y", legendY);
+        rect.setAttribute("width", "12");
+        rect.setAttribute("height", "12");
+        rect.setAttribute("fill", item.color);
+        rect.setAttribute("rx", "3");
+        svg.appendChild(rect);
 
-            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", 42 + index * 150);
-            text.setAttribute("y", legendY + 10);
-            text.setAttribute("font-size", "11");
-            text.setAttribute("fill", graphText);
-            text.textContent = item.label;
-            svg.appendChild(text);
-        });
-    }
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", 42 + index * 150);
+        text.setAttribute("y", legendY + 10);
+        text.setAttribute("font-size", "11");
+        text.setAttribute("fill", graphText);
+        text.textContent = item.label;
+        svg.appendChild(text);
+    });
 
     chart.appendChild(svg);
 
