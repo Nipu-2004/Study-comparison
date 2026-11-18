@@ -25,12 +25,27 @@
                 <label for="registerUsername">Username</label>
                 <input type="text" id="registerUsername" autocomplete="username" required>
 
+                <label for="studentLevel">Are you an A/L or O/L student?</label>
+                <select id="studentLevel" required>
+                    <option value="" disabled selected>Select your level</option>
+                    <option value="A/L">A/L student</option>
+                    <option value="O/L">O/L student</option>
+                </select>
+
+                <label for="examMonth">Exam month and year</label>
+                <input type="month" id="examMonth" required>
+                <small class="exam-countdown-note">The countdown will target the last day of the selected month.</small>
+
                 <label for="registerPassword">Password</label>
                 <input type="password" id="registerPassword" minlength="6" autocomplete="new-password" required>
 
                 <button type="submit" class="full">Create Account</button>
             </form>
             <p id="registerMessage" class="message" aria-live="polite"></p>
+            <div id="examCountdownCard" class="exam-countdown-card hidden">
+                <h3>Your exam countdown</h3>
+                <p id="examCountdownText" aria-live="polite"></p>
+            </div>
             <a id="loginAfterRegister" class="auth-success-link hidden" href="student-login.html">Go to Student Login</a>
             <a class="auth-back-link" href="student.html">← Back to student options</a>
         </section>
@@ -38,6 +53,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
+    <script src="exam-countdown.js"></script>
     <script src="auth-pages.js"></script>
 </body>
 </html>

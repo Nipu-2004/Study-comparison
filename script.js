@@ -173,6 +173,8 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     if (!confirmed) return;
 
     localStorage.clear();
+    document.getElementById("examCountdownCard").classList.add("hidden");
+    window.ExamCountdown.clear(document.getElementById("examCountdownText"));
     studyRecords = [];
     dayTotalRecords = [];
     currentRange = "week";
@@ -1235,6 +1237,24 @@ function showAuthScreen(loggedIn) {
     const profileUsername = currentProfile?.username?.trim().toLowerCase();
     const isAdmin =
         loggedIn && profileUsername === ADMIN_USERNAME;
+    const examCountdownCard = document.getElementById("examCountdownCard");
+    const examCountdownText = document.getElementById("examCountdownText");
+    const examDetails = !isAdmin && loggedIn
+        ? window.ExamCountdown.get(currentProfile?.username)
+        : null;
+
+    if (examDetails) {
+        examCountdownCard.classList.remove("hidden");
+        window.ExamCountdown.render(
+            examCountdownText,
+            examDetails.level,
+            examDetails.examMonth
+        );
+    } else {
+        examCountdownCard.classList.add("hidden");
+        window.ExamCountdown.clear(examCountdownText);
+    }
+
 if (isAdmin) {
     console.log("ADMIN DASHBOARD: Loading students...");
     loadAdminStudents();

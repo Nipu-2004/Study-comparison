@@ -78,9 +78,13 @@ if (registerForm) {
 
         const full_name = document.getElementById("registerName").value.trim();
         const username = document.getElementById("registerUsername").value.trim();
+        const studentLevel = document.getElementById("studentLevel").value;
+        const examMonth = document.getElementById("examMonth").value;
         const password = document.getElementById("registerPassword").value;
         const message = document.getElementById("registerMessage");
         const loginAfterRegister = document.getElementById("loginAfterRegister");
+        const examCountdownCard = document.getElementById("examCountdownCard");
+        const examCountdownText = document.getElementById("examCountdownText");
 
         if (username.toLowerCase() === "admin2004") {
             message.textContent = "This username is reserved for the administrator.";
@@ -89,6 +93,8 @@ if (registerForm) {
 
         message.textContent = "Creating account...";
         loginAfterRegister.classList.add("hidden");
+        examCountdownCard.classList.add("hidden");
+        window.ExamCountdown.clear(examCountdownText);
 
         const { data, error } = await authPagesClient.functions.invoke(
             "username-register",
@@ -110,6 +116,19 @@ if (registerForm) {
             return;
         }
 
+        try {
+            window.ExamCountdown.save(username, studentLevel, examMonth);
+            window.ExamCountdown.render(examCountdownText, studentLevel, examMonth);
+        } catch (saveError) {
+            console.error("Could not save exam details:", saveError);
+            message.textContent =
+                "Account created, but the exam countdown could not be saved in this browser.";
+            registerForm.reset();
+            loginAfterRegister.classList.remove("hidden");
+            return;
+        }
+
+        examCountdownCard.classList.remove("hidden");
         message.textContent = "Account created successfully. You can now log in.";
         registerForm.reset();
         loginAfterRegister.classList.remove("hidden");
