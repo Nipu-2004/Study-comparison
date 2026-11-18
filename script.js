@@ -91,6 +91,10 @@ function applyTheme(themeName) {
     if (themeSelect) {
         themeSelect.value = selectedTheme;
     }
+    const adminThemeSelect = document.getElementById("adminThemeSelect");
+    if (adminThemeSelect) {
+        adminThemeSelect.value = selectedTheme;
+    }
 
     localStorage.setItem("studyTrackerTheme", selectedTheme);
 }
@@ -162,10 +166,18 @@ const themeSelect = document.getElementById("themeSelect");
 if (themeSelect) {
     themeSelect.value = "blue";
 }
+const adminThemeSelect = document.getElementById("adminThemeSelect");
+if (adminThemeSelect) {
+    adminThemeSelect.value = "blue";
+}
 
-document.getElementById("themeSelect")?.addEventListener("change", function (event) {
+themeSelect?.addEventListener("change", function (event) {
     applyTheme(event.target.value);
     updateDashboard();
+});
+
+adminThemeSelect?.addEventListener("change", function (event) {
+    applyTheme(event.target.value);
 });
 
 document.getElementById("examDetailsForm")?.addEventListener("submit", function (event) {
@@ -1446,7 +1458,42 @@ console.log("Students query error:", error);
             loadAdminStudentDetails(student.id);
         });
 
-        studentCard.append(name, username, viewButton);
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "delete";
+        deleteButton.textContent = "Delete Account";
+        deleteButton.setAttribute("aria-label", `Delete account for ${student.username}`);
+        deleteButton.addEventListener("click", async () => {
+            const studentName = student.full_name || student.username;
+            if (!window.confirm(`Permanently delete ${studentName}'s account and study data?`)) {
+                return;
+            }
+
+            deleteButton.disabled = true;
+            deleteButton.textContent = "Deleting...";
+
+            const { data, error } = await supabaseClient.functions.invoke(
+                "admin-delete-user",
+                { body: { userId: student.id } }
+            );
+
+            if (error || !data?.success) {
+                console.error("Student deletion error:", error || data?.error);
+                window.alert(error?.message || data?.error || "Could not delete the student account.");
+                deleteButton.disabled = false;
+                deleteButton.textContent = "Delete Account";
+                return;
+            }
+
+            studentCard.remove();
+            document.getElementById("studentDetails").textContent =
+                "Select a student to view their study details.";
+            if (studentList.childElementCount === 0) {
+                studentList.textContent = "No students found.";
+            }
+        });
+
+        studentCard.append(name, username, viewButton, deleteButton);
         studentList.appendChild(studentCard);
     });
 }
