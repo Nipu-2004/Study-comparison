@@ -1257,26 +1257,41 @@ motivationQuotes.slice(0, 8).forEach((quote, index) => {
     document.getElementById("authQuoteLayer").appendChild(quoteElement);
 });
 
-function selectLoginMode(mode, form = "login") {
-    selectedLoginMode = mode;
-    authChoice.classList.add("hidden");
-    studentChoice.classList.add("hidden");
-    authForms.classList.remove("hidden");
-    authForms.classList.add("single-mode");
-    loginCard.classList.toggle("hidden", form !== "login");
-    registerCard.classList.toggle("hidden", form !== "register" || mode === "admin");
+function navigateAuthPage(page) {
+    window.location.search = `?page=${page}`;
+}
+
+function renderAuthPage() {
+    const requestedPage = new URLSearchParams(window.location.search).get("page");
+    const validPages = ["home", "student", "admin", "student-login", "student-register"];
+    const page = validPages.includes(requestedPage) ? requestedPage : "home";
+    const showLogin = page === "admin" || page === "student-login";
+    const showRegistration = page === "student-register";
+
+    selectedLoginMode = page === "admin" ? "admin"
+        : page === "student" || showLogin || showRegistration ? "student"
+            : null;
+
+    authChoice.classList.toggle("hidden", page !== "home");
+    studentChoice.classList.toggle("hidden", page !== "student");
+    authForms.classList.toggle("hidden", !showLogin && !showRegistration);
+    authForms.classList.toggle("single-mode", showLogin || showRegistration);
+    loginCard.classList.toggle("hidden", !showLogin);
+    registerCard.classList.toggle("hidden", !showRegistration);
     document.getElementById("loginTitle").textContent =
-        mode === "admin" ? "Admin Login" : "Student Login";
-    document.getElementById("loginMessage").textContent = "";
-    document.getElementById("registerMessage").textContent = "";
+        page === "admin" ? "Admin Login" : "Student Login";
+}
+
+function selectLoginMode(mode, form = "login") {
+    if (mode === "admin") {
+        navigateAuthPage("admin");
+    } else {
+        navigateAuthPage(form === "register" ? "student-register" : "student-login");
+    }
 }
 
 document.getElementById("studentLoginChoice")
-    .addEventListener("click", () => {
-        selectedLoginMode = "student";
-        authChoice.classList.add("hidden");
-        studentChoice.classList.remove("hidden");
-    });
+    .addEventListener("click", () => navigateAuthPage("student"));
 document.getElementById("adminLoginChoice")
     .addEventListener("click", () => selectLoginMode("admin"));
 document.getElementById("newStudentChoice")
@@ -1284,20 +1299,9 @@ document.getElementById("newStudentChoice")
 document.getElementById("existingStudentChoice")
     .addEventListener("click", () => selectLoginMode("student", "login"));
 document.getElementById("backToRoleChoice")
-    .addEventListener("click", () => {
-        selectedLoginMode = null;
-        studentChoice.classList.add("hidden");
-        authChoice.classList.remove("hidden");
-    });
+    .addEventListener("click", () => navigateAuthPage("home"));
 function returnToPreviousAuthChoice() {
-    authForms.classList.add("hidden");
-    authForms.classList.remove("single-mode");
-    if (selectedLoginMode === "student") {
-        studentChoice.classList.remove("hidden");
-    } else {
-        selectedLoginMode = null;
-        authChoice.classList.remove("hidden");
-    }
+    navigateAuthPage(selectedLoginMode === "student" ? "student" : "home");
 }
 
 document.getElementById("backToAuthChoice")
@@ -1310,18 +1314,11 @@ function showAuthScreen(loggedIn) {
 
     authSection.classList.toggle("hidden", loggedIn);
     if (!loggedIn) {
-        selectedLoginMode = null;
-        authChoice.classList.remove("hidden");
-        studentChoice.classList.add("hidden");
-        authForms.classList.add("hidden");
-        authForms.classList.remove("single-mode");
-        loginCard.classList.remove("hidden");
-        registerCard.classList.remove("hidden");
         document.getElementById("loginForm").reset();
         document.getElementById("loginMessage").textContent = "";
         document.getElementById("registerForm").reset();
         document.getElementById("registerMessage").textContent = "";
-        document.getElementById("loginTitle").textContent = "Student Login";
+        renderAuthPage();
     }
 
     appHeader.style.display = loggedIn ? "" : "none";
@@ -1749,6 +1746,6 @@ document.getElementById("logoutBtn")
     studyRecords = [];
     dayTotalRecords = [];
 
-    showAuthScreen(false);
+    navigateAuthPage("home");
 
 });
