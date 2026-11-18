@@ -157,7 +157,11 @@ document.addEventListener("click", function (event) {
 });
 
 updateUserNameDisplay();
-applyTheme(localStorage.getItem("studyTrackerTheme") || "blue");
+document.body.dataset.theme = "blue";
+const themeSelect = document.getElementById("themeSelect");
+if (themeSelect) {
+    themeSelect.value = "blue";
+}
 
 document.getElementById("themeSelect")?.addEventListener("change", function (event) {
     applyTheme(event.target.value);
@@ -1461,6 +1465,7 @@ async function initializeAuth() {
     if (data.session) {
 
         currentUser = data.session.user;
+        applyTheme(localStorage.getItem("studyTrackerTheme") || "blue");
 
         await loadUserData();
 
