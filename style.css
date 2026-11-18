@@ -24,6 +24,11 @@
     --message-color: #c63d7d;
     --modal-overlay: rgba(116, 42, 82, 0.45);
     --select-bg: #fff;
+    --graph-primary: #ff5ca8;
+    --graph-primary-glow: #ff9cc8;
+    --graph-secondary: #5b7cff;
+    --graph-secondary-glow: #a7b9ff;
+    --graph-axis: #8f4d73;
 }
 
 body[data-theme="blue"] {
@@ -51,6 +56,11 @@ body[data-theme="blue"] {
     --muted-text: #4b6f94;
     --message-color: #1b5db6;
     --modal-overlay: rgba(15, 51, 93, 0.45);
+    --graph-primary: #3a86ff;
+    --graph-primary-glow: #8dbaff;
+    --graph-secondary: #16a6a1;
+    --graph-secondary-glow: #8bded9;
+    --graph-axis: #4b6f94;
 }
 
 body[data-theme="green"] {
@@ -78,6 +88,11 @@ body[data-theme="green"] {
     --muted-text: #4a7f66;
     --message-color: #1d7a54;
     --modal-overlay: rgba(19, 71, 49, 0.45);
+    --graph-primary: #2a9d68;
+    --graph-primary-glow: #78d5a5;
+    --graph-secondary: #d68a24;
+    --graph-secondary-glow: #f0c77e;
+    --graph-axis: #527a68;
 }
 
 body[data-theme="purple"] {
@@ -105,6 +120,11 @@ body[data-theme="purple"] {
     --muted-text: #66579d;
     --message-color: #5b3ec8;
     --modal-overlay: rgba(48, 34, 87, 0.45);
+    --graph-primary: #7c5cff;
+    --graph-primary-glow: #b7a5ff;
+    --graph-secondary: #d64f9b;
+    --graph-secondary-glow: #f0a3ce;
+    --graph-axis: #675a88;
 }
 
 * {
@@ -236,6 +256,239 @@ header p {
     max-width: 1200px;
     margin: auto;
     padding: 30px 20px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.auth-shell {
+    width: 100%;
+    max-width: none;
+    min-height: 100vh;
+    margin: 0;
+    padding: 48px 24px;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    background:
+        radial-gradient(circle at 8% 18%, var(--shadow) 0, transparent 220px),
+        radial-gradient(circle at 92% 82%, var(--shadow) 0, transparent 260px);
+}
+
+.auth-shell > :not(.auth-quote-layer) {
+    position: relative;
+    z-index: 1;
+}
+
+.auth-quote-layer {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.auth-floating-quote {
+    position: absolute;
+    width: min(250px, 30vw);
+    color: var(--button-start);
+    font-size: clamp(14px, 1.6vw, 20px);
+    font-weight: 700;
+    line-height: 1.45;
+    text-align: center;
+    opacity: 0.14;
+    animation: quote-float 12s ease-in-out infinite;
+}
+
+.auth-floating-quote:nth-child(1) {
+    top: 12%;
+    left: 4%;
+}
+
+.auth-floating-quote:nth-child(2) {
+    top: 20%;
+    right: 5%;
+}
+
+.auth-floating-quote:nth-child(3) {
+    bottom: 17%;
+    left: 8%;
+}
+
+.auth-floating-quote:nth-child(4) {
+    right: 7%;
+    bottom: 11%;
+}
+
+.auth-floating-quote:nth-child(5) {
+    top: 46%;
+    left: 2%;
+}
+
+.auth-floating-quote:nth-child(6) {
+    top: 48%;
+    right: 2%;
+}
+
+.auth-floating-quote:nth-child(7) {
+    bottom: 3%;
+    left: 34%;
+}
+
+.auth-floating-quote:nth-child(8) {
+    top: 3%;
+    right: 34%;
+}
+
+@keyframes quote-float {
+    0%, 100% {
+        transform: translate3d(0, 0, 0) rotate(-3deg);
+        opacity: 0.08;
+    }
+
+    25% {
+        transform: translate3d(34px, -24px, 0) rotate(3deg);
+        opacity: 0.22;
+    }
+
+    50% {
+        transform: translate3d(-12px, -50px, 0) rotate(-2deg);
+        opacity: 0.26;
+    }
+
+    75% {
+        transform: translate3d(-32px, -18px, 0) rotate(4deg);
+        opacity: 0.18;
+    }
+}
+
+.auth-brand,
+.auth-choice {
+    width: 100%;
+    max-width: 620px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.auth-brand-mark {
+    width: 66px;
+    height: 66px;
+    margin: 0 auto 14px;
+    display: grid;
+    place-items: center;
+    border-radius: 22px;
+    background: linear-gradient(135deg, var(--button-start), var(--button-end));
+    box-shadow: 0 12px 28px var(--shadow-strong);
+    font-size: 32px;
+}
+
+.auth-eyebrow {
+    margin-bottom: 8px;
+    color: var(--button-start);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+}
+
+.auth-brand h1 {
+    color: var(--text-heading);
+    font-size: clamp(28px, 5vw, 42px);
+    line-height: 1.15;
+}
+
+.auth-tagline {
+    margin-top: 10px;
+    color: var(--text-subtle);
+    font-size: 16px;
+}
+
+.auth-choice {
+    padding: 28px;
+    border-radius: 22px;
+    box-shadow: 0 18px 45px var(--shadow-strong);
+}
+
+.auth-choice h2 {
+    margin-bottom: 22px;
+    font-size: 19px;
+}
+
+.auth-choice-buttons,
+.auth-forms {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.auth-choice-buttons button {
+    min-height: 86px;
+    margin: 0;
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--card-bg-2);
+    color: var(--text-heading);
+    text-align: left;
+    box-shadow: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-choice-buttons button:hover {
+    transform: translateY(-3px);
+    border-color: var(--button-start);
+    background: var(--card-bg-1);
+    box-shadow: 0 10px 24px var(--shadow);
+}
+
+.auth-choice-buttons button:focus-visible {
+    outline: 3px solid var(--button-start);
+    outline-offset: 3px;
+}
+
+.auth-option-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    flex: 0 0 44px;
+    place-items: center;
+    border-radius: 13px;
+    background: var(--button-soft-start);
+    font-size: 22px;
+}
+
+.auth-option-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.auth-option-copy strong {
+    font-size: 16px;
+}
+
+.auth-option-copy small {
+    color: var(--text-subtle);
+    font-size: 12px;
+}
+
+.auth-option-arrow {
+    color: var(--button-start);
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.auth-forms.single-mode {
+    grid-template-columns: minmax(0, 520px);
+    justify-content: center;
 }
 
 .welcome {
@@ -371,7 +624,8 @@ button:hover {
 
 .chart-card {
     margin-top: 25px;
-    margin-left: auto;
+    margin-left: 0;
+    margin-right: auto;
     max-width: 900px;
     width: 100%;
     background: linear-gradient(180deg, var(--card-bg-1) 0%, var(--card-bg-2) 100%);
@@ -608,7 +862,7 @@ button:hover {
 
 .chart {
     height: 230px;
-    background: #fff;
+    background: var(--card-bg-1);
     border-radius: 12px;
     overflow: hidden;
     position: relative;
@@ -620,7 +874,7 @@ button:hover {
     display: block;
     width: 100%;
     height: 100%;
-    background: #fff;
+    background: var(--card-bg-1);
     transition: transform 0.45s ease, opacity 0.35s ease;
 }
 
@@ -687,6 +941,29 @@ button:hover {
 
 @media(max-width: 750px) {
 
+    .auth-shell {
+        padding: 32px 18px;
+        gap: 24px;
+    }
+
+    .auth-choice {
+        padding: 22px;
+    }
+
+    .auth-choice-buttons {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-floating-quote {
+        width: 170px;
+        font-size: 13px;
+        opacity: 0.1;
+    }
+
+    .auth-forms {
+        grid-template-columns: 1fr;
+    }
+
     .stats {
         grid-template-columns: 1fr;
     }
@@ -706,5 +983,10 @@ button:hover {
     header {
         padding: 22px;
     }
+}
 
+@media(prefers-reduced-motion: reduce) {
+    .auth-floating-quote {
+        animation: none;
+    }
 }

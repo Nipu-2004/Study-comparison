@@ -1,3 +1,14 @@
+// SUPABASE CONNECTION
+
+const supabaseClient = window.supabase.createClient(
+    window.SUPABASE_URL,
+    window.SUPABASE_ANON_KEY
+);
+
+let currentUser = null;
+let currentProfile = null;
+const ADMIN_USERNAME = "admin2004";
+
 // GET TODAY'S DATE
 
 function today() {
@@ -28,7 +39,7 @@ function updateEntryDateLimits() {
     });
 }
 
-const appVersion = "1.0.3";
+const appVersion = "1.1.3";
 const appVersionElement = document.getElementById("appVersion");
 if (appVersionElement) {
     appVersionElement.textContent = `Version ${appVersion}`;
@@ -102,7 +113,7 @@ function showNameModal() {
 }
 
 function saveUserName(name) {
-    const finalName = (name && name.trim()) ? name.trim() : "Student";
+    const finalName = name && name.trim() ? name.trim() : "Student";
     localStorage.setItem("studyTrackerUserName", finalName);
     updateUserNameDisplay(finalName);
     document.getElementById("nameModal")?.classList.add("hidden");
@@ -150,6 +161,7 @@ applyTheme(localStorage.getItem("studyTrackerTheme") || "pink");
 
 document.getElementById("themeSelect")?.addEventListener("change", function (event) {
     applyTheme(event.target.value);
+    updateDashboard();
 });
 
 document.getElementById("clearDataBtn")?.addEventListener("click", function () {
@@ -178,17 +190,11 @@ document.getElementById("clearDataBtn")?.addEventListener("click", function () {
     }
 });
 
-showNameModal();
 
 // LOAD SAVED DATA
 
-let studyRecords = JSON.parse(
-    localStorage.getItem("studyRecords") || "[]"
-);
-
-let dayTotalRecords = JSON.parse(
-    localStorage.getItem("dayTotalRecords") || "[]"
-);
+let studyRecords = [];
+let dayTotalRecords = [];
 
 let currentGraph = "daily";
 let currentRange = "week";
@@ -379,7 +385,7 @@ const motivationImageFiles = [
 ];
 
 const motivationImageFolder = "./New folder";
-const motivationImages = motivationImageFiles.map((file) => `${motivationImageFolder}/${encodeURI(file)}`);
+const motivationImages = motivationImageFiles.map(file => `${motivationImageFolder}/${encodeURI(file)}`);
 
 const motivationLibrary = Array.from({ length: 48 }, (_, index) => ({
     quote: motivationQuotes[index],
@@ -482,23 +488,61 @@ function hideMotivationPopup() {
 
 // SAVE DATA
 
-function saveData() {
-    localStorage.setItem(
-        "studyRecords",
-        JSON.stringify(studyRecords)
-    );
+// SAVE STUDY RECORD TO SUPABASE
 
-    localStorage.setItem(
-        "dayTotalRecords",
-        JSON.stringify(dayTotalRecords)
-    );
+async function saveStudyRecord(session) {
+
+    const { data, error } = await supabaseClient
+        .from("study_records")
+        .insert({
+            user_id: currentUser.id,
+            study_date: session.date,
+            subject: session.subject,
+            start_time: session.start,
+            end_time: session.end,
+            duration: session.duration
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error(error);
+        throw error;
+    }
+
+    return data;
+}
+
+
+// SAVE DAILY TOTAL TO SUPABASE
+
+async function saveDailyTotal(date, totalHours) {
+
+    const { data, error } = await supabaseClient
+        .from("day_total_records")
+        .upsert({
+            user_id: currentUser.id,
+            record_date: date,
+            total_hours: totalHours
+        }, {
+            onConflict: "user_id,record_date"
+        })
+        .select()
+        .single();
+
+    if (error) {
+        console.error(error);
+        throw error;
+    }
+
+    return data;
 }
 
 
 // ADD STUDY SESSION
 
 document.getElementById("studyForm")
-.addEventListener("submit", function(e) {
+.addEventListener("submit", async function(e) {
 
     e.preventDefault();
 
@@ -534,18 +578,35 @@ document.getElementById("studyForm")
         return;
     }
 
-    const session = {
-        id: Date.now(),
-        date: date,
-        subject: subject,
-        start: start,
-        end: end,
-        duration: duration
-    };
+const session = {
+    date: date,
+    subject: subject,
+    start: start,
+    end: end,
+    duration: duration
+};
 
-    studyRecords.push(session);
+try {
 
-    saveData();
+    const savedRecord = await saveStudyRecord(session);
+
+    studyRecords.push({
+        id: savedRecord.id,
+        date: savedRecord.study_date,
+        subject: savedRecord.subject,
+        start: savedRecord.start_time.slice(0, 5),
+        end: savedRecord.end_time.slice(0, 5),
+        duration: Number(savedRecord.duration)
+    });
+
+} catch (error) {
+
+    document.getElementById("studyMessage").textContent =
+        "Could not save study session. Please try again.";
+
+    return;
+
+}
 
     updateStudyMilestone(duration);
 
@@ -566,7 +627,7 @@ document.getElementById("studyForm")
 // ADD END-OF-DAY TOTAL
 
 document.getElementById("dayTotalForm")
-.addEventListener("submit", function(e) {
+.addEventListener("submit", async function(e) {
 
     e.preventDefault();
 
@@ -590,19 +651,34 @@ document.getElementById("dayTotalForm")
         return;
     }
 
-    const existingIndex = dayTotalRecords.findIndex(record => record.date === date);
+try {
+
+    const savedTotal = await saveDailyTotal(date, totalHours);
+
+    const existingIndex = dayTotalRecords.findIndex(
+        record => record.date === date
+    );
+
+    const newRecord = {
+        id: savedTotal.id,
+        date: savedTotal.record_date,
+        totalHours: Number(savedTotal.total_hours)
+    };
 
     if (existingIndex >= 0) {
-        dayTotalRecords[existingIndex].totalHours = totalHours;
+        dayTotalRecords[existingIndex] = newRecord;
     } else {
-        dayTotalRecords.push({
-            id: Date.now(),
-            date: date,
-            totalHours: totalHours
-        });
+        dayTotalRecords.push(newRecord);
     }
 
-    saveData();
+} catch (error) {
+
+    document.getElementById("comparisonMessage").textContent =
+        "Could not save daily total. Please try again.";
+
+    return;
+
+}
 
     document.getElementById("comparisonMessage")
         .textContent = "End-of-day total saved successfully!";
@@ -772,6 +848,13 @@ function updateDashboard() {
 
     const selectedDate = document.getElementById("studyDate")?.value || today();
     const dailyHours = Array.from({ length: 24 }, () => 0);
+    const graphTheme = getComputedStyle(document.body);
+    const graphPrimary = graphTheme.getPropertyValue("--graph-primary").trim();
+    const graphPrimaryGlow = graphTheme.getPropertyValue("--graph-primary-glow").trim();
+    const graphSecondary = graphTheme.getPropertyValue("--graph-secondary").trim();
+    const graphSecondaryGlow = graphTheme.getPropertyValue("--graph-secondary-glow").trim();
+    const graphAxis = graphTheme.getPropertyValue("--graph-axis").trim();
+    const graphText = graphTheme.getPropertyValue("--text-main").trim();
 
     studyRecords
         .filter(record => record.date === selectedDate)
@@ -802,20 +885,20 @@ function updateDashboard() {
 
     const dailySeries = [{
         values: dailyHours,
-        color: "#ff5ca8",
-        glow: "#ff9cc8",
+        color: graphPrimary,
+        glow: graphPrimaryGlow,
         label: "Daily Study Time"
     }];
 
     const progressSeries = [{
         values: hours,
-        color: "#ff5ca8",
-        glow: "#ff9cc8",
+        color: graphPrimary,
+        glow: graphPrimaryGlow,
         label: "Daily Study Time"
     }, {
         values: dates.map(date => getDayTotalForDate(date)),
-        color: "#5b7cff",
-        glow: "#a7b9ff",
+        color: graphSecondary,
+        glow: graphSecondaryGlow,
         label: "End-of-Day Total"
     }];
 
@@ -842,7 +925,7 @@ function updateDashboard() {
     glow.setAttribute("dx", "0");
     glow.setAttribute("dy", "0");
     glow.setAttribute("stdDeviation", "2.5");
-    glow.setAttribute("flood-color", "#ff7bb8");
+    glow.setAttribute("flood-color", graphPrimary);
     glow.setAttribute("flood-opacity", "0.7");
     filter.appendChild(glow);
     defs.appendChild(filter);
@@ -853,7 +936,7 @@ function updateDashboard() {
     baseline.setAttribute("y1", height - padding.bottom);
     baseline.setAttribute("x2", width - padding.right);
     baseline.setAttribute("y2", height - padding.bottom);
-    baseline.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
+    baseline.setAttribute("stroke", graphAxis);
     baseline.setAttribute("stroke-width", "2");
     svg.appendChild(baseline);
 
@@ -862,7 +945,7 @@ function updateDashboard() {
     leftAxis.setAttribute("y1", padding.top);
     leftAxis.setAttribute("x2", padding.left);
     leftAxis.setAttribute("y2", height - padding.bottom);
-    leftAxis.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
+    leftAxis.setAttribute("stroke", graphAxis);
     leftAxis.setAttribute("stroke-width", "2");
     svg.appendChild(leftAxis);
 
@@ -883,29 +966,29 @@ function updateDashboard() {
         yTicks.push(value);
     }
 
-    yTicks.forEach((value) => {
-        const y = height - padding.bottom - ((value / yMaxTick) * graphHeight);
+    yTicks.forEach(value => {
+        const y = height - padding.bottom - value / yMaxTick * graphHeight;
 
         const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
         tick.setAttribute("x1", padding.left - 6);
         tick.setAttribute("y1", y);
         tick.setAttribute("x2", padding.left);
         tick.setAttribute("y2", y);
-        tick.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
+        tick.setAttribute("stroke", graphAxis);
         tick.setAttribute("stroke-width", "1.2");
         svg.appendChild(tick);
     });
 
     if (currentGraph === "daily") {
         const hourSteps = isMobile ? [0, 6, 12, 18, 24] : [0, 6, 12, 18, 24];
-        hourSteps.forEach((hour) => {
+        hourSteps.forEach(hour => {
             const x = padding.left + (hour / 24) * (width - padding.left - padding.right);
             const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
             tick.setAttribute("x1", x);
             tick.setAttribute("y1", height - padding.bottom);
             tick.setAttribute("x2", x);
             tick.setAttribute("y2", height - padding.bottom + 6);
-            tick.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
+            tick.setAttribute("stroke", graphAxis);
             tick.setAttribute("stroke-width", "1.2");
             svg.appendChild(tick);
 
@@ -915,7 +998,7 @@ function updateDashboard() {
             label.setAttribute("text-anchor", "middle");
             label.setAttribute("font-size", isMobile ? "22" : "15");
             label.setAttribute("font-weight", "800");
-            label.setAttribute("fill", "#4a1d3a");
+            label.setAttribute("fill", graphText);
             label.textContent = `${hour}h`;
             svg.appendChild(label);
         });
@@ -933,7 +1016,7 @@ function updateDashboard() {
             tick.setAttribute("y1", height - padding.bottom);
             tick.setAttribute("x2", x);
             tick.setAttribute("y2", height - padding.bottom + 8);
-            tick.setAttribute("stroke", "rgba(60, 74, 100, 0.7)");
+            tick.setAttribute("stroke", graphAxis);
             tick.setAttribute("stroke-width", "1.2");
             svg.appendChild(tick);
 
@@ -943,7 +1026,7 @@ function updateDashboard() {
             label.setAttribute("text-anchor", "middle");
             label.setAttribute("font-size", isMobile ? "22" : "15");
             label.setAttribute("font-weight", "800");
-            label.setAttribute("fill", "#4a1d3a");
+            label.setAttribute("fill", graphText);
             const displayDate = new Date(date + "T00:00:00");
             const day = displayDate.getDate();
             const month = displayDate.toLocaleDateString("en-US", { month: "short" });
@@ -1000,7 +1083,7 @@ function updateDashboard() {
             label.setAttribute("y", point.y - 12);
             label.setAttribute("text-anchor", "middle");
             label.setAttribute("font-size", isMobile ? "16" : "12");
-            label.setAttribute("fill", "#2f3d5a");
+            label.setAttribute("fill", graphText);
             label.setAttribute("font-weight", "900");
             label.textContent = `${value.toFixed(1)}h`;
             svg.appendChild(label);
@@ -1010,8 +1093,8 @@ function updateDashboard() {
     if (currentGraph === "progress") {
         const legendY = 14;
         const legendItems = [
-            { color: "#ff5ca8", label: "Daily Study" },
-            { color: "#5b7cff", label: "End-of-Day Total" }
+            { color: graphPrimary, label: "Daily Study" },
+            { color: graphSecondary, label: "End-of-Day Total" }
         ];
 
         legendItems.forEach((item, index) => {
@@ -1028,7 +1111,7 @@ function updateDashboard() {
             text.setAttribute("x", 42 + index * 150);
             text.setAttribute("y", legendY + 10);
             text.setAttribute("font-size", "11");
-            text.setAttribute("fill", "#4a1d3a");
+            text.setAttribute("fill", graphText);
             text.textContent = item.label;
             svg.appendChild(text);
         });
@@ -1057,11 +1140,25 @@ function updateDashboard() {
             title: record.subject,
             subtitle: `${record.date} | ${record.start} - ${record.end} | ${record.duration.toFixed(2)} hours`,
             id: record.id,
-            delete: () => {
-                studyRecords = studyRecords.filter(item => item.id !== record.id);
-                saveData();
-                updateDashboard();
-            }
+            delete: async () => {
+
+    const { error } = await supabaseClient
+        .from("study_records")
+        .delete()
+        .eq("id", record.id)
+        .eq("user_id", currentUser.id);
+
+    if (error) {
+        alert("Could not delete study record.");
+        return;
+    }
+
+    studyRecords = studyRecords.filter(
+        item => item.id !== record.id
+    );
+
+    updateDashboard();
+}
         });
     });
 
@@ -1073,11 +1170,25 @@ function updateDashboard() {
             title: "End-of-day total",
             subtitle: `${record.date} | ${record.totalHours} hours`,
             id: record.id,
-            delete: () => {
-                dayTotalRecords = dayTotalRecords.filter(item => item.id !== record.id);
-                saveData();
-                updateDashboard();
-            }
+            delete: async () => {
+
+    const { error } = await supabaseClient
+        .from("day_total_records")
+        .delete()
+        .eq("id", record.id)
+        .eq("user_id", currentUser.id);
+
+    if (error) {
+        alert("Could not delete daily total.");
+        return;
+    }
+
+    dayTotalRecords = dayTotalRecords.filter(
+        item => item.id !== record.id
+    );
+
+    updateDashboard();
+}
         });
     });
 
@@ -1123,4 +1234,521 @@ function updateDashboard() {
 
 // INITIAL LOAD
 
-updateDashboard();
+
+// AUTHENTICATION AND USER DATA
+
+const authSection = document.getElementById("authSection");
+const appHeader = document.querySelector("header");
+const appContainer = document.querySelector("body > .container:not(#authSection)");
+const appFooter = document.querySelector(".site-footer");
+const adminDashboard = document.getElementById("adminDashboard");
+const authChoice = document.getElementById("authChoice");
+const studentChoice = document.getElementById("studentChoice");
+const authForms = document.getElementById("authForms");
+const loginCard = document.getElementById("loginCard");
+const registerCard = document.getElementById("registerCard");
+let selectedLoginMode = null;
+
+motivationQuotes.slice(0, 8).forEach((quote, index) => {
+    const quoteElement = document.createElement("span");
+    quoteElement.className = "auth-floating-quote";
+    quoteElement.textContent = quote;
+    quoteElement.style.animationDelay = `${index * -4}s`;
+    document.getElementById("authQuoteLayer").appendChild(quoteElement);
+});
+
+function selectLoginMode(mode, form = "login") {
+    selectedLoginMode = mode;
+    authChoice.classList.add("hidden");
+    studentChoice.classList.add("hidden");
+    authForms.classList.remove("hidden");
+    authForms.classList.add("single-mode");
+    loginCard.classList.toggle("hidden", form !== "login");
+    registerCard.classList.toggle("hidden", form !== "register" || mode === "admin");
+    document.getElementById("loginTitle").textContent =
+        mode === "admin" ? "Admin Login" : "Student Login";
+    document.getElementById("loginMessage").textContent = "";
+    document.getElementById("registerMessage").textContent = "";
+}
+
+document.getElementById("studentLoginChoice")
+    .addEventListener("click", () => {
+        selectedLoginMode = "student";
+        authChoice.classList.add("hidden");
+        studentChoice.classList.remove("hidden");
+    });
+document.getElementById("adminLoginChoice")
+    .addEventListener("click", () => selectLoginMode("admin"));
+document.getElementById("newStudentChoice")
+    .addEventListener("click", () => selectLoginMode("student", "register"));
+document.getElementById("existingStudentChoice")
+    .addEventListener("click", () => selectLoginMode("student", "login"));
+document.getElementById("backToRoleChoice")
+    .addEventListener("click", () => {
+        selectedLoginMode = null;
+        studentChoice.classList.add("hidden");
+        authChoice.classList.remove("hidden");
+    });
+function returnToPreviousAuthChoice() {
+    authForms.classList.add("hidden");
+    authForms.classList.remove("single-mode");
+    if (selectedLoginMode === "student") {
+        studentChoice.classList.remove("hidden");
+    } else {
+        selectedLoginMode = null;
+        authChoice.classList.remove("hidden");
+    }
+}
+
+document.getElementById("backToAuthChoice")
+    .addEventListener("click", returnToPreviousAuthChoice);
+document.getElementById("backFromRegistration")
+    .addEventListener("click", returnToPreviousAuthChoice);
+
+
+function showAuthScreen(loggedIn) {
+
+    authSection.classList.toggle("hidden", loggedIn);
+    if (!loggedIn) {
+        selectedLoginMode = null;
+        authChoice.classList.remove("hidden");
+        studentChoice.classList.add("hidden");
+        authForms.classList.add("hidden");
+        authForms.classList.remove("single-mode");
+        loginCard.classList.remove("hidden");
+        registerCard.classList.remove("hidden");
+        document.getElementById("loginForm").reset();
+        document.getElementById("loginMessage").textContent = "";
+        document.getElementById("registerForm").reset();
+        document.getElementById("registerMessage").textContent = "";
+        document.getElementById("loginTitle").textContent = "Student Login";
+    }
+
+    appHeader.style.display = loggedIn ? "" : "none";
+    appFooter.style.display = loggedIn ? "" : "none";
+
+    const profileUsername = currentProfile?.username?.trim().toLowerCase();
+    const isAdmin =
+        loggedIn && profileUsername === ADMIN_USERNAME;
+if (isAdmin) {
+    console.log("ADMIN DASHBOARD: Loading students...");
+    loadAdminStudents();
+}
+
+
+    appContainer.style.display =
+        loggedIn && !isAdmin ? "" : "none";
+
+    adminDashboard.classList.toggle("hidden", !isAdmin);
+
+    document.getElementById("nameModal").classList.add("hidden");
+
+    if (loggedIn) {
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+    }
+}
+
+
+
+// LOAD USER DATA FROM SUPABASE
+
+async function loadUserData() {
+
+    if (!currentUser) return;
+
+    const { data: profile, error: profileError } =
+        await supabaseClient
+            .from("profiles")
+            .select("*")
+            .eq("id", currentUser.id)
+            .single();
+
+    if (profileError) {
+        console.error(profileError);
+        alert("Could not load your profile.");
+        return;
+    }
+
+    currentProfile = profile;
+
+    updateUserNameDisplay(
+        profile.full_name || currentUser.email
+    );
+
+    // LOAD STUDY RECORDS
+
+    const { data: studies, error: studyError } =
+        await supabaseClient
+            .from("study_records")
+            .select("*")
+            .eq("user_id", currentUser.id);
+
+    if (studyError) {
+        console.error(studyError);
+        alert("Could not load study records.");
+        return;
+    }
+
+    studyRecords = studies.map(record => ({
+        id: record.id,
+        date: record.study_date,
+        subject: record.subject,
+        start: record.start_time?.slice(0, 5),
+        end: record.end_time?.slice(0, 5),
+        duration: Number(record.duration)
+
+    }));
+
+    // LOAD DAILY TOTAL RECORDS
+
+    const { data: totals, error: totalError } =
+        await supabaseClient
+            .from("day_total_records")
+            .select("*")
+            .eq("user_id", currentUser.id);
+
+    if (totalError) {
+        console.error(totalError);
+        alert("Could not load daily totals.");
+        return;
+    }
+
+    dayTotalRecords = totals.map(record => ({
+        id: record.id,
+        date: record.record_date,
+        totalHours: Number(record.total_hours)
+    }));
+
+        updateStudyMilestone(
+        studyRecords.at(-1)?.duration || 0
+    );
+
+    updateDashboard();
+
+} // loadUserData function ends here
+
+
+async function loadAdminStudents() {
+    const studentList = document.getElementById("studentList");
+
+    studentList.textContent = "Loading students...";
+
+    const { data: students, error } = await supabaseClient
+        .from("profiles")
+        .select("id, username, full_name")
+        .eq("role", "student")
+        .order("full_name");
+        console.log("Students received:", students);
+console.log("Students query error:", error);
+
+    if (error) {
+        console.error("Student loading error:", error);
+        studentList.textContent = "Could not load students.";
+        return;
+    }
+
+    studentList.replaceChildren();
+
+    if (!students || students.length === 0) {
+        studentList.textContent = "No students found.";
+        return;
+    }
+
+    students.forEach(student => {
+        const studentCard = document.createElement("div");
+        studentCard.className = "card";
+
+        const name = document.createElement("h3");
+        name.textContent = student.full_name || "Unknown Student";
+
+        const username = document.createElement("p");
+        username.textContent = "Username: " + student.username;
+
+        const viewButton = document.createElement("button");
+        viewButton.textContent = "View Details";
+        viewButton.addEventListener("click", () => {
+            loadAdminStudentDetails(student.id);
+        });
+
+        studentCard.append(name, username, viewButton);
+        studentList.appendChild(studentCard);
+    });
+}
+
+async function loadAdminStudentDetails(studentId) {
+    const studentDetails = document.getElementById("studentDetails");
+
+    studentDetails.textContent = "Loading study details...";
+
+    const { data: studies, error } = await supabaseClient
+        .from("study_records")
+        .select("*")
+        .eq("user_id", studentId)
+        .order("study_date", { ascending: false });
+
+    if (error) {
+        console.error("Study details error:", error);
+        studentDetails.textContent = "Could not load study details.";
+        return;
+    }
+
+    const { data: student, error: profileError } = await supabaseClient
+        .from("profiles")
+        .select("full_name, username")
+        .eq("id", studentId)
+        .single();
+
+    if (profileError) {
+        console.error(profileError);
+        studentDetails.textContent = "Could not load student profile.";
+        return;
+    }
+
+    studentDetails.replaceChildren();
+
+    const heading = document.createElement("h3");
+    heading.textContent = student.full_name || "Student";
+
+    const username = document.createElement("p");
+    username.textContent = "Username: " + student.username;
+
+    studentDetails.append(heading, username);
+
+    if (!studies || studies.length === 0) {
+        const message = document.createElement("p");
+        message.textContent = "No study records found.";
+        studentDetails.appendChild(message);
+        return;
+    }
+
+    studies.forEach(record => {
+        const item = document.createElement("div");
+        item.className = "card";
+
+        const subject = document.createElement("h4");
+        subject.textContent = record.subject;
+
+        const date = document.createElement("p");
+        date.textContent = "Date: " + record.study_date;
+
+        const duration = document.createElement("p");
+        duration.textContent = "Duration: " + record.duration + " hours";
+
+        item.append(subject, date, duration);
+        studentDetails.appendChild(item);
+    });
+}
+
+
+// CHECK LOGIN SESSION
+
+async function initializeAuth() {
+
+    showAuthScreen(false);
+
+    const { data, error } =
+        await supabaseClient.auth.getSession();
+
+    if (error) {
+        console.error(error);
+        return;
+    }
+
+    if (data.session) {
+
+        currentUser = data.session.user;
+
+        await loadUserData();
+
+        if (currentProfile) {
+            showAuthScreen(true);
+        }
+
+    } else {
+
+        currentUser = null;
+        currentProfile = null;
+
+        studyRecords = [];
+        dayTotalRecords = [];
+
+        showAuthScreen(false);
+    }
+}
+
+
+// LOGIN
+
+document.getElementById("loginForm")
+.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const username =
+        document.getElementById("loginUsername").value.trim();
+
+    const password =
+        document.getElementById("loginPassword").value;
+
+    const message =
+        document.getElementById("loginMessage");
+
+    if (!selectedLoginMode) {
+        message.textContent = "Choose Student or Admin to continue.";
+        return;
+    }
+
+    const isAdminUsername = username.toLowerCase() === ADMIN_USERNAME;
+    if ((selectedLoginMode === "admin") !== isAdminUsername) {
+        message.textContent = selectedLoginMode === "admin"
+            ? "Enter the administrator username to continue."
+            : "Please use the Admin option to log in with the administrator username.";
+        return;
+    }
+
+    message.textContent = "Logging in...";
+
+    const { data, error } =
+        await supabaseClient.functions.invoke(
+            "username-login",
+            {
+                body: {
+                    username: username,
+                    password: password
+                }
+            }
+        );
+
+    if (error || !data?.access_token || !data?.refresh_token) {
+        console.error(error);
+        message.textContent =
+            data?.error || "Invalid username or password.";
+        return;
+    }
+
+    const { data: sessionData, error: sessionError } =
+        await supabaseClient.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token
+        });
+
+    if (sessionError) {
+        console.error(sessionError);
+        message.textContent = sessionError.message;
+        return;
+    }
+
+    currentUser = sessionData.user;
+    currentProfile = null;
+
+    await loadUserData();
+
+    if (currentProfile) {
+        showAuthScreen(true);
+    } else {
+        message.textContent = "Could not load your profile.";
+    }
+
+});
+
+
+
+
+ // REGISTER
+
+document.getElementById("registerForm")
+.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const full_name =
+        document.getElementById("registerName").value.trim();
+
+    const username =
+        document.getElementById("registerUsername").value.trim();
+
+    if (username.toLowerCase() === ADMIN_USERNAME) {
+        document.getElementById("registerMessage").textContent =
+            "This username is reserved for the administrator.";
+        return;
+    }
+
+    const password =
+        document.getElementById("registerPassword").value;
+
+    const message =
+        document.getElementById("registerMessage");
+
+    message.textContent = "Creating account...";
+
+    const { data, error } =
+        await supabaseClient.functions.invoke(
+            "username-register",
+            {
+                body: {
+                    full_name: full_name,
+                    username: username,
+                    password: password
+                }
+            }
+        );
+
+
+if (error || !data?.message) {
+
+    let errorDetails = "";
+
+    if (error?.context) {
+        try {
+            errorDetails = await error.context.clone().text();
+        } catch (e) {
+            errorDetails = "Could not read error response.";
+        }
+    }
+
+    console.log("Function error:", error);
+    console.log("Server error details:", errorDetails);
+
+    message.textContent = errorDetails || error?.message || "Registration failed.";
+
+    return;
+}
+
+
+    message.textContent =
+        "Account created successfully! Please login.";
+
+    document.getElementById("registerForm").reset();
+
+});
+
+
+
+// START APPLICATION
+
+initializeAuth();
+
+// LOGOUT
+
+document.getElementById("logoutBtn")
+.addEventListener("click", async function() {
+
+    const { error } = await supabaseClient.auth.signOut();
+
+    if (error) {
+        alert(error.message);
+        return;
+    }
+
+    currentUser = null;
+    currentProfile = null;
+
+    studyRecords = [];
+    dayTotalRecords = [];
+
+    showAuthScreen(false);
+
+});
