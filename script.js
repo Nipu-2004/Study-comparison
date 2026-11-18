@@ -1258,28 +1258,26 @@ motivationQuotes.slice(0, 8).forEach((quote, index) => {
 });
 
 function navigateAuthPage(page) {
-    window.location.search = `?page=${page}`;
+    const pagePaths = {
+        home: "index.html",
+        student: "student.html",
+        admin: "admin.html",
+        "student-login": "student-login.html",
+        "student-register": "student-register.html"
+    };
+
+    window.location.href = pagePaths[page] || pagePaths.home;
 }
 
 function renderAuthPage() {
-    const requestedPage = new URLSearchParams(window.location.search).get("page");
-    const validPages = ["home", "student", "admin", "student-login", "student-register"];
-    const page = validPages.includes(requestedPage) ? requestedPage : "home";
-    const showLogin = page === "admin" || page === "student-login";
-    const showRegistration = page === "student-register";
-
-    selectedLoginMode = page === "admin" ? "admin"
-        : page === "student" || showLogin || showRegistration ? "student"
-            : null;
-
-    authChoice.classList.toggle("hidden", page !== "home");
-    studentChoice.classList.toggle("hidden", page !== "student");
-    authForms.classList.toggle("hidden", !showLogin && !showRegistration);
-    authForms.classList.toggle("single-mode", showLogin || showRegistration);
-    loginCard.classList.toggle("hidden", !showLogin);
-    registerCard.classList.toggle("hidden", !showRegistration);
-    document.getElementById("loginTitle").textContent =
-        page === "admin" ? "Admin Login" : "Student Login";
+    selectedLoginMode = null;
+    authChoice.classList.remove("hidden");
+    studentChoice.classList.add("hidden");
+    authForms.classList.add("hidden");
+    authForms.classList.remove("single-mode");
+    loginCard.classList.add("hidden");
+    registerCard.classList.add("hidden");
+    document.getElementById("loginTitle").textContent = "Student Login";
 }
 
 function selectLoginMode(mode, form = "login") {

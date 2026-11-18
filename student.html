@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student | Study Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container auth-shell">
+        <div id="authQuoteLayer" class="auth-quote-layer" aria-hidden="true"></div>
+        <div class="auth-brand">
+            <div class="auth-brand-mark" aria-hidden="true">📚</div>
+            <p class="auth-eyebrow">STUDY · GROW · SHINE</p>
+            <h1>Your next chapter starts here</h1>
+            <p class="auth-tagline">Make every study session a step toward your goals.</p>
+        </div>
+
+        <section class="card auth-choice">
+            <h2>Are you new or ready to log in?</h2>
+            <div class="auth-choice-buttons">
+                <a class="auth-page-link" href="student-register.html">
+                    <span class="auth-option-icon" aria-hidden="true">🌱</span>
+                    <span class="auth-option-copy">
+                        <strong>New Student</strong>
+                        <small>Create your account</small>
+                    </span>
+                    <span class="auth-option-arrow" aria-hidden="true">→</span>
+                </a>
+                <a class="auth-page-link" href="student-login.html">
+                    <span class="auth-option-icon" aria-hidden="true">🔑</span>
+                    <span class="auth-option-copy">
+                        <strong>Student Login</strong>
+                        <small>I already have an account</small>
+                    </span>
+                    <span class="auth-option-arrow" aria-hidden="true">→</span>
+                </a>
+            </div>
+            <a class="auth-back-link" href="index.html">← Back to start</a>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-pages.js"></script>
+</body>
+</html>

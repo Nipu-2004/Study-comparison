@@ -425,7 +425,8 @@ header p {
     gap: 20px;
 }
 
-.auth-choice-buttons button {
+.auth-choice-buttons button,
+.auth-choice-buttons .auth-page-link {
     min-height: 86px;
     margin: 0;
     padding: 14px;
@@ -437,20 +438,38 @@ header p {
     background: var(--card-bg-2);
     color: var(--text-heading);
     text-align: left;
+    text-decoration: none;
     box-shadow: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.auth-choice-buttons button:hover {
+.auth-choice-buttons button:hover,
+.auth-choice-buttons .auth-page-link:hover {
     transform: translateY(-3px);
     border-color: var(--button-start);
     background: var(--card-bg-1);
     box-shadow: 0 10px 24px var(--shadow);
 }
 
-.auth-choice-buttons button:focus-visible {
+.auth-choice-buttons button:focus-visible,
+.auth-choice-buttons .auth-page-link:focus-visible {
     outline: 3px solid var(--button-start);
     outline-offset: 3px;
+}
+
+.auth-back-link,
+.auth-success-link {
+    display: inline-block;
+    margin-top: 18px;
+    color: var(--text-heading);
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.auth-back-link:hover,
+.auth-success-link:hover {
+    color: var(--button-start);
+    text-decoration: underline;
 }
 
 .auth-option-icon {

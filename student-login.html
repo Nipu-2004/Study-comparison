@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login | Study Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container auth-shell">
+        <div id="authQuoteLayer" class="auth-quote-layer" aria-hidden="true"></div>
+        <div class="auth-brand">
+            <div class="auth-brand-mark" aria-hidden="true">📚</div>
+            <p class="auth-eyebrow">STUDY · GROW · SHINE</p>
+            <h1>Welcome back</h1>
+            <p class="auth-tagline">Pick up where your progress left off.</p>
+        </div>
+
+        <section class="card auth-choice">
+            <h2>Student Login</h2>
+            <form id="loginForm" data-login-mode="student">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" autocomplete="username" required>
+
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" autocomplete="current-password" required>
+
+                <button type="submit" class="full">Login</button>
+            </form>
+            <p id="loginMessage" class="message" aria-live="polite"></p>
+            <a class="auth-back-link" href="student.html">← Back to student options</a>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-pages.js"></script>
+</body>
+</html>

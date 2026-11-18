@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Student Account | Study Tracker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="container auth-shell">
+        <div id="authQuoteLayer" class="auth-quote-layer" aria-hidden="true"></div>
+        <div class="auth-brand">
+            <div class="auth-brand-mark" aria-hidden="true">📚</div>
+            <p class="auth-eyebrow">STUDY · GROW · SHINE</p>
+            <h1>Start your study journey</h1>
+            <p class="auth-tagline">Create an account to track your progress.</p>
+        </div>
+
+        <section class="card auth-choice">
+            <h2>Create a Student Account</h2>
+            <form id="registerForm">
+                <label for="registerName">Full Name</label>
+                <input type="text" id="registerName" autocomplete="name" required>
+
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" autocomplete="username" required>
+
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" minlength="6" autocomplete="new-password" required>
+
+                <button type="submit" class="full">Create Account</button>
+            </form>
+            <p id="registerMessage" class="message" aria-live="polite"></p>
+            <a id="loginAfterRegister" class="auth-success-link hidden" href="student-login.html">Go to Student Login</a>
+            <a class="auth-back-link" href="student.html">← Back to student options</a>
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth-pages.js"></script>
+</body>
+</html>
