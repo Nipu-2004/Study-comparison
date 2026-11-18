@@ -71,6 +71,16 @@ if (loginForm) {
     });
 }
 
+if (loginForm?.dataset.loginMode === "student") {
+    const registrationStatus = new URLSearchParams(window.location.search);
+    if (registrationStatus.get("registered") === "1") {
+        const examSaved = registrationStatus.get("examSaved") === "1";
+        document.getElementById("loginMessage").textContent = examSaved
+            ? "Account created successfully. Please log in."
+            : "Account created. Exam details could not be saved in this browser; you can add them on your dashboard.";
+    }
+}
+
 const registerForm = document.getElementById("registerForm");
 if (registerForm) {
     registerForm.addEventListener("submit", async event => {
@@ -82,7 +92,6 @@ if (registerForm) {
         const examMonth = document.getElementById("examMonth").value;
         const password = document.getElementById("registerPassword").value;
         const message = document.getElementById("registerMessage");
-        const loginAfterRegister = document.getElementById("loginAfterRegister");
 
         if (username.toLowerCase() === "admin2004") {
             message.textContent = "This username is reserved for the administrator.";
@@ -90,7 +99,6 @@ if (registerForm) {
         }
 
         message.textContent = "Creating account...";
-        loginAfterRegister.classList.add("hidden");
 
         const { data, error } = await authPagesClient.functions.invoke(
             "username-register",
@@ -112,20 +120,16 @@ if (registerForm) {
             return;
         }
 
+        let examSaved = true;
         try {
             window.ExamCountdown.save(username, studentLevel, examMonth);
         } catch (saveError) {
             console.error("Could not save exam details:", saveError);
-            message.textContent =
-                "Account created, but the exam countdown could not be saved in this browser.";
-            registerForm.reset();
-            loginAfterRegister.classList.remove("hidden");
-            return;
+            examSaved = false;
         }
 
-        message.textContent =
-            "Account created. Log in to see your countdown on the student dashboard.";
         registerForm.reset();
-        loginAfterRegister.classList.remove("hidden");
+        window.location.href =
+            `student-login.html?registered=1&examSaved=${examSaved ? "1" : "0"}`;
     });
 }
