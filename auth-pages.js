@@ -83,8 +83,6 @@ if (registerForm) {
         const password = document.getElementById("registerPassword").value;
         const message = document.getElementById("registerMessage");
         const loginAfterRegister = document.getElementById("loginAfterRegister");
-        const examCountdownCard = document.getElementById("examCountdownCard");
-        const examCountdownText = document.getElementById("examCountdownText");
 
         if (username.toLowerCase() === "admin2004") {
             message.textContent = "This username is reserved for the administrator.";
@@ -93,8 +91,6 @@ if (registerForm) {
 
         message.textContent = "Creating account...";
         loginAfterRegister.classList.add("hidden");
-        examCountdownCard.classList.add("hidden");
-        window.ExamCountdown.clear(examCountdownText);
 
         const { data, error } = await authPagesClient.functions.invoke(
             "username-register",
@@ -118,7 +114,6 @@ if (registerForm) {
 
         try {
             window.ExamCountdown.save(username, studentLevel, examMonth);
-            window.ExamCountdown.render(examCountdownText, studentLevel, examMonth);
         } catch (saveError) {
             console.error("Could not save exam details:", saveError);
             message.textContent =
@@ -128,8 +123,8 @@ if (registerForm) {
             return;
         }
 
-        examCountdownCard.classList.remove("hidden");
-        message.textContent = "Account created successfully. You can now log in.";
+        message.textContent =
+            "Account created. Log in to see your countdown on the student dashboard.";
         registerForm.reset();
         loginAfterRegister.classList.remove("hidden");
     });

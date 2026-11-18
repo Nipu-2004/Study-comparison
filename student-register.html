@@ -34,7 +34,7 @@
 
                 <label for="examMonth">Exam month and year</label>
                 <input type="month" id="examMonth" required>
-                <small class="exam-countdown-note">The countdown will target the last day of the selected month.</small>
+                <small class="exam-countdown-note">Your countdown will appear on your student dashboard and target the month’s last day.</small>
 
                 <label for="registerPassword">Password</label>
                 <input type="password" id="registerPassword" minlength="6" autocomplete="new-password" required>
@@ -42,10 +42,6 @@
                 <button type="submit" class="full">Create Account</button>
             </form>
             <p id="registerMessage" class="message" aria-live="polite"></p>
-            <div id="examCountdownCard" class="exam-countdown-card hidden">
-                <h3>Your exam countdown</h3>
-                <p id="examCountdownText" aria-live="polite"></p>
-            </div>
             <a id="loginAfterRegister" class="auth-success-link hidden" href="student-login.html">Go to Student Login</a>
             <a class="auth-back-link" href="student.html">← Back to student options</a>
         </section>
